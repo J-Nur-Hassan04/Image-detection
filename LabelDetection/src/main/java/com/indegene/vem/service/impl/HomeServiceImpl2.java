@@ -26,8 +26,8 @@ import software.amazon.awssdk.services.rekognition.model.RekognitionException;
 
 @Service("service2")
 public class HomeServiceImpl2 implements HomeService {
-	private static final String ACCESS_KEY = "AKIAYVQ3XPYARV6J3XHI";
-	private static final String SECRET_KEY = "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";
+	private static final String ACCESS_KEY = "****************************";
+	private static final String SECRET_KEY = "************************************";
 
 	@Override
 	public List<CommonDTO> getLabels(String imageSource) {
