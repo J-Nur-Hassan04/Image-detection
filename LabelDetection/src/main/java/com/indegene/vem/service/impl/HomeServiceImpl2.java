@@ -3,9 +3,11 @@ package com.indegene.vem.service.impl;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -14,8 +16,6 @@ import java.util.stream.Collectors;
 import javax.imageio.ImageIO;
 
 import org.apache.pdfbox.pdmodel.PDDocument;
-import org.apache.pdfbox.pdmodel.PDPage;
-import org.apache.pdfbox.pdmodel.graphics.image.PDImageXObject;
 import org.apache.pdfbox.rendering.PDFRenderer;
 import org.springframework.stereotype.Service;
 
@@ -41,8 +41,8 @@ import software.amazon.awssdk.services.rekognition.model.TextDetection;
 
 @Service("service2")
 public class HomeServiceImpl2 implements HomeService {
-	private static final String ACCESS_KEY = "*";
-	private static final String SECRET_KEY = "*";
+	private static final String ACCESS_KEY = "AKIAYVQ3XPYARV6J3XHI";
+	private static final String SECRET_KEY = "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";
 
 	@Override
 	public Map<String, Object> getLabels(String imageSource) {
@@ -55,11 +55,24 @@ public class HomeServiceImpl2 implements HomeService {
 			AwsCredentialsProvider staticCredentials = StaticCredentialsProvider.create(credentials);
 			RekognitionClient rekClint = RekognitionClient.builder().region(region)
 					.credentialsProvider(staticCredentials).build();
-			labelDtos = detectImageLabels(rekClint, imageSource);
-			textDtos = detectTextLabels(rekClint, imageSource);
+			InputStream sourceStream = new FileInputStream(imageSource);
+			SdkBytes sourceBytes = SdkBytes.fromInputStream(sourceStream);
+			Image souImage = Image.builder().bytes(sourceBytes).build();
+
+			labelDtos = detectImageLabels(rekClint, souImage);
+			textDtos = detectTextLabels(rekClint, souImage);
+
 			rekClint.close();
+			imageAnalyzation.put("image", "data:image/jpeg;base64,"
+					+ Base64.getEncoder().encodeToString(Files.readAllBytes(Paths.get(imageSource))));
 			imageAnalyzation.put("labels", labelDtos);
 			imageAnalyzation.put("texts", textDtos);
+
+			try {
+				sourceStream.close();
+			} catch (Exception exception) {
+				System.out.println(exception.getMessage());
+			}
 
 		} catch (Exception exception) {
 			System.out.println(exception.getMessage());
@@ -68,52 +81,40 @@ public class HomeServiceImpl2 implements HomeService {
 		return imageAnalyzation;
 	}
 
-	private List<LabelsDTO> detectImageLabels(RekognitionClient rekClient, String sourceImage) {
-
+	private List<LabelsDTO> detectImageLabels(RekognitionClient rekClient, Image souImage) {
 		List<LabelsDTO> labelDtos = new ArrayList<>();
 		try {
-			InputStream sourceStream = new FileInputStream(sourceImage);
-			SdkBytes sourceBytes = SdkBytes.fromInputStream(sourceStream);
-			Image souImage = Image.builder().bytes(sourceBytes).build();
-
 			DetectLabelsRequest detectLabelsRequest = DetectLabelsRequest.builder().image(souImage).maxLabels(10)
 					.build();
-
 			DetectLabelsResponse labelsResponse = rekClient.detectLabels(detectLabelsRequest);
 			List<Label> labels = labelsResponse.labels();
 			labelDtos = labels.stream().map(label -> new LabelsDTO(label.name(), label.confidence()))
 					.collect(Collectors.toList());
-		} catch (RekognitionException | FileNotFoundException e) {
+		} catch (RekognitionException e) {
 			System.out.println(e.getMessage());
 		}
 		return labelDtos;
 	}
 
-	private List<TextDTO> detectTextLabels(RekognitionClient rekClient, String sourceImage) {
-
+	private List<TextDTO> detectTextLabels(RekognitionClient rekClient, Image souImage) {
 		List<TextDTO> textDtos = new ArrayList<>();
 		try {
-			InputStream sourceStream = new FileInputStream(sourceImage);
-			SdkBytes sourceBytes = SdkBytes.fromInputStream(sourceStream);
-			Image souImage = Image.builder().bytes(sourceBytes).build();
-
 			DetectTextRequest textRequest = DetectTextRequest.builder().image(souImage).build();
-
 			DetectTextResponse textResponse = rekClient.detectText(textRequest);
 			List<TextDetection> textCollections = textResponse.textDetections();
 			textDtos = textCollections.stream().filter(textCollection -> textCollection.parentId() == null)
 					.map(textCollection -> new TextDTO(textCollection.id(), textCollection.detectedText(),
 							textCollection.confidence()))
 					.collect(Collectors.toList());
-		} catch (RekognitionException | FileNotFoundException e) {
+		} catch (RekognitionException e) {
 			System.out.println(e.getMessage());
-			System.exit(1);
 		}
 		return textDtos;
 	}
 
 	@Override
-	public void separateImagesInPdf(File file) {
+	public List<Map<String, Object>> separateImagesInPdf(File file) {
+		List<Map<String, Object>> mapList = new ArrayList<>();
 		try {
 			PDDocument document = PDDocument.load(file);
 			PDFRenderer renderer = new PDFRenderer(document);
@@ -122,15 +123,17 @@ public class HomeServiceImpl2 implements HomeService {
 				pageNumber++;
 				BufferedImage image = renderer.renderImage(i);
 				String fileName = "page" + pageNumber + ".png";
-				ImageIO.write(image, "png", new File("E:\\WorkSpaces\\Personal_ws\\LabelDetection\\src\\main\\java\\com\\indegene\\vem\\media\\" + fileName));
+				String imageSource = "E:\\WorkSpaces\\Personal_ws\\LabelDetection\\src\\main\\java\\com\\indegene\\vem\\media\\"
+						+ fileName;
+				ImageIO.write(image, "png", new File(imageSource));
+				mapList.add(getLabels(imageSource));
 			}
-
 			document.close();
 
 		} catch (Exception exception) {
 			System.out.println(exception.getMessage());
 		}
-
+		return mapList;
 	}
 
 }

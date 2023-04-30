@@ -42,7 +42,8 @@ public class HomeController {
 			}
 			else
 			{
-				service2.separateImagesInPdf(inputFile);
+				response.setResBody(service2.separateImagesInPdf(inputFile));
+				response.setSuccess();
 			}
 			response.setSuccess();
 			if(inputFile.delete())

@@ -81,8 +81,8 @@ public class HomeServiceImplementation implements HomeService {
 	    }
 
 	@Override
-	public void separateImagesInPdf(File file) {
-		// TODO Auto-generated method stub
+	public List<Map<String, Object>> separateImagesInPdf(File file) {
+		return null;
 		
 	}
 

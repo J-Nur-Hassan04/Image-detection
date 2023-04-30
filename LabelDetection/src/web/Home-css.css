@@ -1,0 +1,35 @@
+#upload-form-div {
+    float: left;
+    width: 30%;
+    border: 2px solid black;
+    padding: 10px;
+    border-radius: 10px;
+}
+#upload-form-div form
+{
+    margin-bottom: 20px;
+}
+
+#result-div {
+    float: right;
+    width: 65%;
+    border: 2px solid black;
+    padding: 10px;
+    border-radius: 10px;
+}
+
+#result-table table,
+th,
+td {
+    border: 1px solid;
+}
+
+#result-table td
+{
+    vertical-align: top;
+    width: 33%;
+}
+#result-table p
+{
+    border-bottom: 1px solid red;
+}
