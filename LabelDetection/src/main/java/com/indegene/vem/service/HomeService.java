@@ -1,10 +1,10 @@
 package com.indegene.vem.service;
 
-import java.util.List;
-
-import com.indegene.vem.dto.CommonDTO;
+import java.io.File;
+import java.util.Map;
 
 public interface HomeService {
-	public List<CommonDTO> getLabels(String imageSource);
+	public Map<String, Object> getLabels(String imageSource);
+	public void separateImagesInPdf(File file);
 
 }
